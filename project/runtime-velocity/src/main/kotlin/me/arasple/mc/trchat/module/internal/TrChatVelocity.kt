@@ -8,6 +8,7 @@ import taboolib.common.platform.ProxyCommandSender
 import taboolib.common.platform.command.command
 import taboolib.common.platform.command.suggest
 import taboolib.common.platform.function.console
+import taboolib.common.platform.function.getDataFolder
 import taboolib.common.platform.function.pluginVersion
 import taboolib.common.util.unsafeLazy
 import taboolib.module.chat.Components
@@ -28,7 +29,9 @@ object TrChatVelocity : Plugin() {
     val plugin by unsafeLazy { VelocityPlugin.getInstance() }
 
     init {
-        Language.releasePath = "plugins/trchat/lang/{1}"
+        // Derive the language folder from the plugin's own data folder instead of the
+        // hardcoded "plugins/trchat" path, so custom plugin loaders keep working.
+        Language.releasePath = "${getDataFolder().path}/lang/{1}"
     }
 
     override fun onLoad() {
