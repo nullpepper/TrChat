@@ -63,7 +63,6 @@ class MsgComponent(
     fun createComponent(sender: CommandSender, msg: String, disabledFunctions: List<String>): ComponentText {
         if (msg.isBlank()) return Components.empty()
         val component = Components.empty()
-//        var message = HookPlugin.getItemsAdder().replaceFontImages(msg, sender as? Player)
         var message = msg.replace("{{", "\\{{")
 
         // 非玩家 不处理functions
