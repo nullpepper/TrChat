@@ -159,20 +159,22 @@ jobs:
           TARGET: ${{ env.TARGET }}
         run: |
           set -euo pipefail
-          if ! git rev-parse --verify --quiet "refs/remotes/upstream/$TARGET" >/dev/null; then
-            echo "::error::上游没有 $TARGET 分支，无法同步。可用 target_branch 指定别的分支。"
-            exit 1
-          fi
-
-          behind=$(git rev-list --count "HEAD..upstream/$TARGET")
-          ahead=$(git rev-list --count "upstream/$TARGET..HEAD")
-          echo "本地 $TARGET 落后上游 $behind 个提交，领先 $ahead 个提交"
-          echo "上游最新提交: $(git log -1 --format='%h %s' "upstream/$TARGET")"
-
-          if [ "$behind" = "0" ]; then
-            echo "已经是最新，无需同步。"
-            echo "mode=none" >> "$GITHUB_OUTPUT"
-            exit 0
+          # 注意：这里不能用「上游必须有同名分支」做前置拦截。
+          # 服务端 merge-upstream 接口按父仓库的同名分支处理，上游没有该分支时
+          # 它自己会返回「已是最新」；用本地 ref 判断反而会把这种正常场景误杀
+          # （例如只存在于 fork 的分支，或上游还没建同名分支）。
+          if git rev-parse --verify --quiet "refs/remotes/upstream/$TARGET" >/dev/null; then
+            behind=$(git rev-list --count "HEAD..upstream/$TARGET")
+            ahead=$(git rev-list --count "upstream/$TARGET..HEAD")
+            echo "本地 $TARGET 落后上游 $behind 个提交，领先 $ahead 个提交"
+            echo "上游最新提交: $(git log -1 --format='%h %s' "upstream/$TARGET")"
+            if [ "$behind" = "0" ]; then
+              echo "已经是最新，无需同步。"
+              echo "mode=none" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          else
+            echo "上游没有 $TARGET 分支；交由服务端接口判断（通常会返回已是最新）。"
           fi
 
           # 用 GitHub 服务端的 merge-upstream 接口同步（网页「Sync fork」按钮背后的接口）。
