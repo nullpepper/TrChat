@@ -20,6 +20,7 @@ import taboolib.common.platform.*
 import taboolib.common.platform.function.console
 import taboolib.common.platform.function.pluginVersion
 import taboolib.module.chat.Components
+import taboolib.module.lang.Language
 import taboolib.module.lang.sendLang
 import taboolib.module.nms.MinecraftVersion
 import taboolib.module.nms.MinecraftVersion.versionId
@@ -27,6 +28,19 @@ import taboolib.platform.Folia
 
 @PlatformSide(Platform.BUKKIT)
 object TrChatBukkit : Plugin() {
+
+    // TabooLib 的 Language 默认把语言文件读写到 "plugins/{0}/lang/{1}"（插件名硬编码），
+    // 自定义插件加载器把数据文件夹放到别处时，读到的是这里写出的默认文件，
+    // 数据文件夹里的自定义翻译会被遮蔽。
+    // 必须放在静态初始化块：TabooLib 的 i18n 模块在自己的 CONST 钩子里就完成读写，
+    // 那时 onLoad 还没跑。此处也不能用 getDataFolder()/pluginId —— 插件实例与服务都未就绪，
+    // 只能用与 plugin.yml 的 name 一致的字面量拼出与 plugins 同级的数据根。
+    // {1} 仍由 TabooLib 替换为语言代码。
+    init {
+        // getPluginsFolder() 在插件加载期是相对路径，必须先取绝对路径再取父目录。
+        Language.releasePath =
+            "${Bukkit.getPluginsFolder().absoluteFile.parentFile.path}/plugins-data/TrChat/lang/{1}"
+    }
 
     var isPaperEnv = false
         private set
